@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Micro-Mortgage Investment Platform</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f9f9f9;
+        }
+
+        header {
+            background-color: #4CAF50;
+            color: white;
+            padding: 1rem;
+            text-align: center;
+        }
+
+        .container {
+            padding: 2rem;
+        }
+
+        .section {
+            margin-bottom: 2rem;
+            background: white;
+            padding: 1.5rem;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .section h2, .section h3 {
+            margin-top: 0;
+        }
+
+        input, textarea, button {
+            display: block;
+            width: 100%;
+            margin-top: 0.5rem;
+            margin-bottom: 1rem;
+            padding: 0.5rem;
+            border-radius: 4px;
+            border: 1px solid #ccc;
+        }
+
+        button {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #45a049;
+        }
+
+        .opportunity {
+            border-bottom: 1px solid #ccc;
+            padding: 1rem 0;
+        }
+
+        .opportunity:last-child {
+            border-bottom: none;
+        }
+
+        .total-returns {
+            margin-top: 1rem;
+            padding: 1rem;
+            background-color: #d4edda;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .calc-result {
+            margin-top: 1rem;
+            background-color: #e9ecef;
+            padding: 1rem;
+            border-radius: 8px;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Micro-Mortgage Investment Platform</h1>
+    </header>
+
+    <div class="container">
+        <!-- Homeowner Interest Calculator -->
+        <div class="section" id="homeowner-interest-calculator">
+            <h3>Homeowner Interest Calculator</h3>
+            <form id="homeownerCalculatorForm">
+                <label for="calcAmount">Loan Amount (£)</label>
+                <input type="number" id="calcAmount" placeholder="e.g., 50000" required>
+
+                <label for="calcInterest">Interest Rate (%)</label>
+                <input type="number" id="calcInterest" placeholder="e.g., 5" step="0.1" required>
+
+                <label for="calcYears">Repayment Term (Years)</label>
+                <input type="number" id="calcYears" placeholder="e.g., 30" required>
+
+                <button type="button" onclick="calculateHomeownerRepayment()">Calculate Total Repayment</button>
+            </form>
+            <p id="homeownerCalcResult" class="calc-result">Your total repayment will appear here.</p>
+        </div>
+
+        <!-- Homebuyer Form -->
+        <div class="section" id="homebuyer-form">
+            <h2>Homebuyer Application</h2>
+            <form id="buyerForm">
+                <label for="homebuyerName">Full Name</label>
+                <input type="text" id="homebuyerName" placeholder="Your Full Name" required>
+
+                <label for="amount">Mortgage Amount Needed (£)</label>
+                <input type="number" id="amount" placeholder="e.g., 50000" required>
+
+                <label for="interest">Proposed Interest Rate (%)</label>
+                <input type="number" id="interest" placeholder="e.g., 5" step="0.1" required>
+
+                <label for="monthly">Estimated Monthly Payment (£)</label>
+                <input type="number" id="monthly" placeholder="e.g., 200" required>
+
+                <label for="termYears">Loan Term (Years)</label>
+                <input type="number" id="termYears" placeholder="e.g., 30" required>
+
+                <label for="description">Description</label>
+                <textarea id="description" placeholder="Tell us why you need this mortgage..." required></textarea>
+
+                <button type="submit">Submit Application</button>
+            </form>
+        </div>
+
+        <!-- Investor Dashboard -->
+        <div class="section" id="investor-dashboard">
+            <h2>Investment Opportunities</h2>
+            <div id="opportunities">
+                <p>No opportunities available yet. Submit a mortgage request!</p>
+            </div>
+        </div>
+
+        <!-- Total Returns for Investors -->
+        <div class="total-returns" id="totalReturns">
+            <p>Total Annual Returns for Investors: £0</p>
+        </div>
+    </div>
+
+    <script>
+        // Mock database for opportunities
+        const opportunities = [];
+
+        // Form submission handler for homebuyer
+        document.getElementById('buyerForm').addEventListener('submit', function(event) {
+            event.preventDefault();
+
+            const name = document.getElementById('homebuyerName').value;
+            const amount = parseFloat(document.getElementById('amount').value);
+            const interest = parseFloat(document.getElementById('interest').value) / 100; // Convert percentage to decimal
+            const termYears = parseFloat(document.getElementById('termYears').value);
+            const monthly = parseFloat(document.getElementById('monthly').value);
+            const description = document.getElementById('description').value;
+
+            // Add new opportunity
+            const newOpportunity = {
+                id: Date.now(),
+                name,
+                amount,
+                interest,
+                termYears,
+                monthly,
+                description,
+                funded: 0,
+                investors: []  // Track individual investors and their contributions
+            };
+            opportunities.push(newOpportunity);
+
+            // Reset form
+            this.reset();
+
+            // Update opportunities and total returns
+            updateOpportunities();
+            updateTotalReturns();
+        });
+
+        // Calculate total repayment and monthly payment for the homeowner
+        function calculateHomeownerRepayment() {
+            const amount = parseFloat(document.getElementById('calcAmount').value);
+            const interestRate = parseFloat(document.getElementById('calcInterest').value) / 100; // Convert percentage to decimal
+            const termYears = parseFloat(document.getElementById('calcYears').value);
+
+            if (amount <= 0 || interestRate < 0 || termYears <= 0) {
+                document.getElementById('homeownerCalcResult').innerText = 'Please enter valid inputs.';
+                return;
+            }
+
+            const n = 12; // Number of compounding periods per year (monthly)
+            const totalPayments = termYears * n;
+            const monthlyInterestRate = interestRate / n;
+
+            // Calculate monthly payment using the formula for monthly payments on a loan
+            const monthlyPayment = (amount * monthlyInterestRate) / (1 - Math.pow(1 + monthlyInterestRate, -totalPayments));
+
+            // Calculate total repayment over the full term
+            const totalRepayment = monthlyPayment * totalPayments;
+            const totalInterestPaid = totalRepayment - amount;
+
+            document.getElementById('homeownerCalcResult').innerText = 
+                `Your estimated monthly payment is £${monthlyPayment.toFixed(2)}. 
+                Total repayment over ${termYears} years will be £${totalRepayment.toFixed(2)}.
+                Total interest paid will be £${totalInterestPaid.toFixed(2)}.`;
+        }
+
+        // Update opportunities in the DOM and show returns for each application
+        function updateOpportunities() {
+            const container = document.getElementById('opportunities');
+            container.innerHTML = ''; // Clear existing opportunities
+
+            if (opportunities.length === 0) {
+                container.innerHTML = '<p>No opportunities available yet. Submit a mortgage request!</p>';
+                return;
+            }
+
+            opportunities.forEach(opportunity => {
+                // Calculate total compound interest paid over the full term of the loan for each opportunity
+                const n = 12; // Compounded monthly
+                const totalPayments = opportunity.termYears * n;
+                const monthlyInterestRate = opportunity.interest / n;
+
+                // Calculate monthly payment
+                const monthlyPayment = (opportunity.amount * monthlyInterestRate) / (1 - Math.pow(1 + monthlyInterestRate, -totalPayments));
+                const totalRepayment = monthlyPayment * totalPayments;
+                const totalInterestPaid = totalRepayment - opportunity.amount;
+
+                const div = document.createElement('div');
+                div.className = 'opportunity';
+                div.innerHTML = `
+                    <h3>${opportunity.name} - £${opportunity.amount}</h3>
+                    <p>${opportunity.description}</p>
+                    <p><strong>Interest Rate:</strong> ${(opportunity.interest * 100).toFixed(2)}%</p>
+                    <p><strong>Estimated Monthly Payment:</strong> £${monthlyPayment.toFixed(2)}</p>
+                    <p><strong>Total Repayment (Full Term):</strong> £${totalRepayment.toFixed(2)}</p>
+                    <p><strong>Total Interest Paid (Full Term):</strong> £${totalInterestPaid.toFixed(2)}</p>
+                    <label for="investorName">Investor Full Name</label>
+                    <input type="text" id="investorName" placeholder="Your Full Name" required>
+                    <input type="number" placeholder="Contribution Amount (£)" min="1" max="${opportunity.amount - opportunity.funded}" required>
+                    <button onclick="fundOpportunity(${opportunity.id}, this.previousElementSibling.previousElementSibling.value, this.previousElementSibling.value)">Contribute</button>
+                `;
+                container.appendChild(div);
+            });
+        }
+
+        // Update total returns for all investors
+        function updateTotalReturns() {
+            const totalReturns = opportunities.reduce((sum, opportunity) => {
+                if (opportunity.funded > 0) {
+                    const n = 12; // Compounded monthly
+                    const totalPayments = opportunity.termYears * n;
+                    const monthlyInterestRate = opportunity.interest / n;
+
+                    // Calculate the total interest paid over the full term
+                    const totalRepayment = opportunity.amount * Math.pow(1 + monthlyInterestRate, totalPayments);
+                    const totalInterestPaid = totalRepayment - opportunity.amount;
+
+                    const annualInterest = totalInterestPaid / opportunity.termYears;
+                    return sum + annualInterest;
+                }
+                return sum;
+            }, 0);
+
+            document.getElementById('totalReturns').innerHTML = `<p>Total Annual Returns for Investors: £${totalReturns.toFixed(2)}</p>`;
+        }
+
+        // Calculate and display monthly interest returns for each investor
+        function showInvestorMonthlyInterest(opportunity) {
+            const totalRepayment = opportunity.amount * Math.pow(1 + opportunity.interest / 12, opportunity.termYears * 12);
+            const totalInterestPaid = totalRepayment - opportunity.amount;
+
+            opportunity.investors.forEach(investor => {
+                const investorShare = investor.contribution / opportunity.amount;
+                const investorInterestTotal = totalInterestPaid * investorShare;
+                const monthlyInterest = investorInterestTotal / (opportunity.termYears * 12);
+
+                console.log(`Investor ${investor.name} will receive £${monthlyInterest.toFixed(2)} per month.`);
+            });
+        }
+
+        // Fund an opportunity
+        function fundOpportunity(id, investorName, amount) {
+            const opportunity = opportunities.find(op => op.id === id);
+            const contribution = parseFloat(amount);
+
+            if (contribution > 0 && opportunity && opportunity.funded + contribution <= opportunity.amount) {
+                opportunity.funded += contribution;
+                opportunity.investors.push({ name: investorName, contribution });
+
+                alert(`${investorName}, thank you for contributing £${contribution} to ${opportunity.name}!`);
+                updateOpportunities();
+                updateTotalReturns();
+                showInvestorMonthlyInterest(opportunity);
+            } else {
+                alert('Invalid contribution amount or opportunity not found.');
+            }
+        }
+    </script>
+</body>
+</html>
